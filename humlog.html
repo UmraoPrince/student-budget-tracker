@@ -1,0 +1,1560 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Budget Intelligence System</title>
+
+    <!-- External Dependencies -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --card-bg: rgba(30, 41, 59, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --accent-primary: #38bdf8;
+            --accent-secondary: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-danger: #ef4444;
+            --text-main: #f8fafc;
+            --text-dim: #94a3b8;
+            --gradient-1: #38bdf8;
+            --gradient-2: #818cf8;
+            --gradient-3: #c084fc;
+        }
+
+        body {
+            background: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Animated Background */
+        body::before {
+            content: "";
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(56, 189, 248, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(129, 140, 248, 0.05) 0%, transparent 40%),
+                radial-gradient(circle at 20% 80%, rgba(192, 132, 252, 0.05) 0%, transparent 40%);
+            animation: rotateBG 30s linear infinite;
+            z-index: -1;
+        }
+
+        @keyframes rotateBG {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Glassmorphism Enhancements */
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            transition: 0.5s;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px) scale(1.01);
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 0 20px 40px 0 rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.1);
+        }
+
+        .glass-card:hover::before {
+            left: 100%;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: rgba(2, 6, 23, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 1.25rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, var(--gradient-1), var(--gradient-2), var(--gradient-3));
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradientMove 6s ease infinite;
+        }
+
+        @keyframes gradientMove {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* Navigation Buttons */
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim);
+            padding: 0.6rem 1.2rem;
+            border-radius: 14px;
+            font-weight: 600;
+            transition: 0.3s;
+            margin: 0 0.4rem;
+        }
+
+        .nav-btn:hover {
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .nav-btn.active {
+            color: white;
+            background: linear-gradient(135deg, rgba(56, 189, 248, 0.3), rgba(129, 140, 248, 0.3));
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            left: -300px;
+            top: 0;
+            width: 300px;
+            height: 100%;
+            background: rgba(2, 6, 23, 0.95);
+            backdrop-filter: blur(30px);
+            padding: 2.5rem 1.5rem;
+            transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 2000;
+            border-right: 1px solid var(--glass-border);
+            box-shadow: 20px 0 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .sidebar.active {
+            left: 0;
+        }
+
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(5px);
+            z-index: 1001;
+            display: none;
+            opacity: 0;
+            transition: 0.4s;
+        }
+
+        .sidebar-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .sidebar .nav-group {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .sidebar button {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid transparent;
+            color: var(--text-dim);
+            padding: 1rem 1.25rem;
+            border-radius: 16px;
+            text-align: left;
+            font-weight: 600;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar button:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--text-main);
+            border-color: var(--glass-border);
+            transform: translateX(8px);
+        }
+
+        .sidebar button.active {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            color: white;
+            box-shadow: 0 10px 20px rgba(56, 189, 248, 0.2);
+        }
+
+        /* Buttons */
+        .btn-premium {
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            border: none;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 12px;
+            font-weight: 700;
+            transition: 0.4s;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+        }
+
+        .btn-premium:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.5);
+            background: linear-gradient(135deg, #4ed3ff, #99aaff);
+        }
+
+        /* KPI Values Glow */
+        .kpi-value {
+            text-shadow: 0 0 20px currentColor;
+        }
+
+        /* Table Premium Feel */
+        .table tbody tr {
+            background: rgba(255, 255, 255, 0.02);
+            transition: 0.3s;
+            border-radius: 16px;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: scale(1.005);
+        }
+
+        /* Theme Toggle Fix */
+        .light {
+            --bg-dark: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.8);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text-main: #020617;
+            --text-dim: #64748b;
+        }
+
+        .light body::before {
+            background: radial-gradient(circle at center, rgba(56, 189, 248, 0.1) 0%, transparent 50%);
+        }
+
+        .light .navbar {
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .light .form-control,
+        .light .form-select {
+            background: white !important;
+            color: black !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .stagger-in>* {
+            animation: slideIn 0.5s ease forwards;
+            opacity: 0;
+        }
+
+        .stagger-in>*:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .stagger-in>*:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .stagger-in>*:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .stagger-in>*:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+
+        /* Auth Screen */
+        #authOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+            z-index: 5000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        #authOverlay::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(56, 189, 248, 0.1) 0%, transparent 50%);
+            animation: rotateBG 20s linear infinite;
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 450px;
+            padding: 3rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .auth-mode {
+            display: none;
+        }
+
+        .auth-mode.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .otp-input-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .otp-digit {
+            width: 50px;
+            height: 60px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid var(--glass-border) !important;
+            border-radius: 12px;
+            color: white !important;
+        }
+
+        .otp-digit:focus {
+            border-color: var(--accent-primary) !important;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+    </style>
+</head>
+
+<body class="auth-required">
+
+    <!-- Auth Overlay -->
+    <div id="authOverlay">
+        <div class="glass-card auth-card">
+            <div class="text-center mb-5">
+                <h1 class="navbar-brand d-block mb-2">STUDENT FINANCE</h1>
+                <p class="text-dim small uppercase fw-bold tracking-widest">Neural Intelligence System</p>
+            </div>
+
+            <!-- Login Mode -->
+            <div id="loginMode" class="auth-mode active">
+                <h3 class="fw-bold mb-4">Welcome Back</h3>
+                <div class="mb-3">
+                    <label class="small text-dim mb-1">Email / Mobile</label>
+                    <input type="text" id="loginId" class="form-control" placeholder="user@example.com">
+                </div>
+                <div class="mb-4">
+                    <label class="small text-dim mb-1">Security Key</label>
+                    <input type="password" id="loginPass" class="form-control" placeholder="••••••••">
+                </div>
+                <button class="btn btn-premium w-100 py-3 mb-4" onclick="handleLogin()">ACCESS SYSTEM</button>
+                <div class="text-center">
+                    <p class="small text-dim">
+                        New entity? <a href="javascript:void(0)" class="text-info"
+                            onclick="switchAuth('signup')">Initialize Identity</a><br>
+                        <a href="javascript:void(0)" class="text-warning mt-2 d-inline-block"
+                            onclick="switchAuth('reset')">Recover Guardrail Access</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Signup Mode -->
+            <div id="signupMode" class="auth-mode">
+                <h3 class="fw-bold mb-4">Initialize Identity</h3>
+                <div class="mb-3">
+                    <label class="small text-dim mb-1">Email Protocol</label>
+                    <input type="email" id="signupEmail" class="form-control" placeholder="name@domain.com">
+                </div>
+                <div class="mb-3">
+                    <label class="small text-dim mb-1">Mobile Interface</label>
+                    <input type="tel" id="signupMobile" class="form-control" placeholder="+91 XXXXX XXXXX">
+                </div>
+                <div class="mb-4">
+                    <label class="small text-dim mb-1">Set Password</label>
+                    <input type="password" id="signupPass" class="form-control" placeholder="Create strong key">
+                </div>
+                <button class="btn btn-premium w-100 py-3 mb-4" onclick="sendOTP('signup')">GENERATE VERIFICATION
+                    OTP</button>
+                <div class="text-center">
+                    <p class="small text-dim">Existing entity? <a href="javascript:void(0)" class="text-info"
+                            onclick="switchAuth('login')">Return to Command</a></p>
+                </div>
+            </div>
+
+            <!-- OTP Mode -->
+            <div id="otpMode" class="auth-mode">
+                <h3 class="fw-bold mb-2">Verification Required</h3>
+                <p class="small text-dim mb-4" id="otpTargetInfo">Sent code to mobile interface</p>
+                <div class="otp-input-group">
+                    <input type="text" maxlength="1" class="otp-digit" onkeyup="moveFocus(this, 1)">
+                    <input type="text" maxlength="1" class="otp-digit" onkeyup="moveFocus(this, 2)">
+                    <input type="text" maxlength="1" class="otp-digit" onkeyup="moveFocus(this, 3)">
+                    <input type="text" maxlength="1" class="otp-digit" onkeyup="moveFocus(this, 4)">
+                </div>
+                <button class="btn btn-premium w-100 py-3 mb-4" onclick="verifyOTP()">SYNC IDENTITY</button>
+                <div class="text-center">
+                    <p class="small text-dim">Didn't receive? <a href="javascript:void(0)" class="text-info"
+                            onclick="sendOTP()">Retransmit</a></p>
+                </div>
+            </div>
+
+            <!-- Reset Mode -->
+            <div id="resetMode" class="auth-mode">
+                <h3 class="fw-bold mb-4">Identity Recovery</h3>
+                <p class="small text-dim mb-4">Verification will be sent to Mobile (primary) or Email (fallback).</p>
+                <div class="mb-4">
+                    <label class="small text-dim mb-1">Registered Email or Mobile</label>
+                    <input type="text" id="resetId" class="form-control" placeholder="Verification endpoint">
+                </div>
+                <button class="btn btn-warning w-100 py-3 mb-4" onclick="sendOTP('reset')">REQUEST RECOVERY OTP</button>
+                <div class="text-center">
+                    <p class="small text-dim"><a href="javascript:void(0)" class="text-info"
+                            onclick="switchAuth('login')">Go Back</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebarOverlay" class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <nav class="navbar navbar-expand-lg">
+        <div class="container d-flex justify-content-between">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-link text-white me-3" onclick="toggleSidebar()"
+                    style="font-size: 1.5rem; text-decoration: none;">
+                    ☰
+                </button>
+                <a class="navbar-brand" href="#">STUDENT FINANCE</a>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <button class="nav-btn d-none d-md-block" onclick="toggleTheme()">
+                    <span id="themeIcon">🌙</span>
+                </button>
+                <button class="btn btn-premium btn-sm" onclick="enableNotifications()">
+                    Notifications
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div id="sidebar" class="sidebar">
+        <div class="d-flex justify-content-between align-items-center mb-5">
+            <h4 class="fw-bold mb-0 text-white" style="letter-spacing: -1px;">NAVIGATION</h4>
+            <button class="btn-close btn-close-white" onclick="toggleSidebar()"></button>
+        </div>
+        <div class="nav-group mb-5">
+            <button class="sidebar-link active" onclick="openPage('dashboard')" data-page="dashboard">
+                <span>📊</span> Dashboard
+            </button>
+            <button class="sidebar-link" onclick="openPage('expenses')" data-page="expenses">
+                <span>💸</span> Expenses
+            </button>
+            <button class="sidebar-link" onclick="openPage('budget')" data-page="budget">
+                <span>🛡️</span> Budget Architect
+            </button>
+            <button class="sidebar-link" onclick="openPage('shared')" data-page="shared">
+                <span>🤝</span> Neural Splitter
+            </button>
+            <button class="sidebar-link" onclick="openPage('analytics')" data-page="analytics">
+                <span>📈</span> Quantum Analytics
+            </button>
+            <button class="sidebar-link" onclick="openPage('reports')" data-page="reports">
+                <span>📥</span> Data Hub
+            </button>
+            <button class="sidebar-link text-danger mt-4" onclick="logout()">
+                <span>🚪</span> Secure Logout
+            </button>
+
+        </div>
+        <div class="mt-auto">
+            <div class="px-3 py-4 glass-card text-center" style="border-radius: 12px;">
+                <p class="small text-dim mb-2">Build v1.4.2</p>
+                <div class="badge bg-success bg-opacity-10 text-success">CONNECTED</div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="container mt-4">
+        <div id="aiAdvisorSection" class="glass-card p-4 mt-3 mb-5" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span style="font-size: 1.5rem;">✨</span>
+                    <h5 class="fw-bold mb-0">AI Financial Intuition</h5>
+                </div>
+                <button class="btn-close btn-close-white btn-sm" onclick="toggleAISection()"></button>
+            </div>
+            <textarea id="aiPrompt" class="form-control mb-3" rows="3"
+                placeholder="Ex: 'Analyze my food spending trends for this month'"></textarea>
+
+            <div class="d-flex justify-content-between align-items-center">
+                <span id="aiLoading" class="small text-info" style="display: none;">Consulting neural network...</span>
+                <button class="btn btn-premium" onclick="askAI()">
+                    SUBMIT QUERY
+                </button>
+            </div>
+            <div id="aiResponse" class="mt-4 p-3 rounded-4 bg-dark bg-opacity-25 border border-white border-opacity-10"
+                style="display: none;"></div>
+        </div>
+
+        <div class="d-flex justify-content-end mb-4">
+            <button class="btn btn-premium py-2 px-4 rounded-pill" onclick="toggleAISection()">
+                ✨ ASK FINANCIAL AI
+            </button>
+        </div>
+    </div>
+    <div id="dashboard" class="page active stagger-in">
+        <div class="d-flex justify-content-between align-items-end mb-4">
+            <div>
+                <h1 class="fw-bold mb-0 h2">Command Center</h1>
+                <p class="text-dim mb-0">Live telemetry of your student liquidity</p>
+            </div>
+            <div id="dateDisplay" class="text-dim fw-medium"></div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="glass-card p-4">
+                    <div class="kpi-title">TOTAL BURN</div>
+                    <div class="kpi-value text-white" id="totalExpense">₹0</div>
+                    <div class="small text-dim mt-2">Sustainable rate</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card p-4">
+                    <div class="kpi-title">DAILY VELOCITY</div>
+                    <div class="kpi-value text-info" id="avgExpense">₹0</div>
+                    <div class="small text-dim mt-2">Live average</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card p-4">
+                    <div class="kpi-title">HEALTH INDEX</div>
+                    <div class="kpi-value text-success" id="healthScore">100%</div>
+                    <div class="small text-dim mt-2">Optimal status</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card p-4">
+                    <div class="kpi-title">GUARDRAILS</div>
+                    <div class="kpi-value text-warning" id="activeBudgets">0</div>
+                    <div class="small text-dim mt-2">Active category caps</div>
+                </div>
+            </div>
+        </div>
+
+
+        <div class="row mt-4 g-4">
+            <div class="col-md-8">
+                <div class="glass-card p-4 h-100">
+                    <h5 class="fw-bold mb-4">Spending Velocity</h5>
+                    <div style="height: 300px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="glass-card p-4 h-100">
+                    <h5 class="fw-bold mb-4">Sector Distribution</h5>
+                    <div style="height: 300px;">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-4 mt-4">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="bg-primary bg-opacity-10 p-2 rounded-3">
+                    ✨
+                </div>
+                <h5 class="fw-bold mb-0">AI Intelligence Report</h5>
+            </div>
+            <div id="aiInsight" class="text-muted">Analyzing your data...</div>
+        </div>
+    </div>
+
+    <div id="expenses" class="page stagger-in">
+        <h2 class="fw-bold mb-4">Expense Nexus</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="glass-card p-4 sticky-top" style="top: 100px;">
+                    <h5 class="fw-bold mb-4">Initialize Entry</h5>
+                    <div class="mb-3">
+                        <label class="small text-dim mb-1">Amount (₹)</label>
+                        <input type="number" id="amount" class="form-control" placeholder="0.00">
+                    </div>
+                    <div class="mb-3">
+                        <label class="small text-dim mb-1">Sector</label>
+                        <select id="category" class="form-select">
+                            <option value="Food">🍱 Food & Dining</option>
+                            <option value="Transport">🚕 Transport</option>
+                            <option value="Shopping">🛒 Shopping</option>
+                            <option value="Education">🎓 Education</option>
+                            <option value="Entertainment">🎮 Entertainment</option>
+                            <option value="Other">⚡ Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="small text-dim mb-1">Description</label>
+                        <input id="desc" class="form-control" placeholder="Transaction details...">
+                    </div>
+                    <button class="btn btn-premium w-100 py-3" onclick="addExpense()">
+                        COMMIT TRANSACTION
+                    </button>
+
+                    <div class="mt-4 pt-4 border-top border-white border-opacity-10">
+                        <h6 class="small fw-bold text-dim mb-3">SMART PREDICTION</h6>
+                        <p id="mlPrediction" class="small text-info mb-3">Analyzing historical patterns...</p>
+                        <button class="btn btn-outline-info btn-sm w-100 rounded-3" onclick="predictML()">
+                            Run Prediction Model
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="glass-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">Historical Log</h5>
+                        <div class="w-50">
+                            <input id="searchBox" class="form-control" placeholder="Filter descriptions..."
+                                onkeyup="searchExpense()">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>DATE</th>
+                                    <th>CATEGORY</th>
+                                    <th>DESCRIPTION</th>
+                                    <th class="text-end">AMOUNT</th>
+                                    <th class="text-end">ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody id="expenseTable"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- BUDGET -->
+    <div id="budget" class="page">
+        <h2 class="fw-bold mb-1">Budget Architect</h2>
+        <p class="text-secondary mb-4">Set boundaries for your financial freedom</p>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="glass-card p-4">
+                    <h5 class="fw-bold mb-3">Configure Limit</h5>
+                    <div class="mb-3">
+                        <label class="small text-secondary mb-1">Category</label>
+                        <select id="budgetCategory" class="form-select">
+                            <option>Food</option>
+                            <option>Transport</option>
+                            <option>Shopping</option>
+                            <option>Education</option>
+                            <option>Entertainment</option>
+                        </select>
+                    </div>
+                    <div class="mb-4">
+                        <label class="small text-secondary mb-1">Monthly Limit (₹)</label>
+                        <input type="number" id="budgetAmount" class="form-control" placeholder="1000">
+                    </div>
+                    <button class="btn btn-warning w-100 py-3 fw-bold rounded-3" onclick="setBudget()">
+                        Update Guardrails
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="glass-card p-4">
+                    <h5 class="fw-bold mb-4">Active Guardrails</h5>
+                    <div id="budgetStatusList">
+                        <!-- Budget statuses will be injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHARED -->
+    <div id="shared" class="page">
+        <h2 class="fw-bold mb-4">Neural Splitter</h2>
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <div class="glass-card p-5 text-center">
+                    <div class="mb-4">
+                        <div class="display-5 mb-2">🤝</div>
+                        <h4 class="fw-bold">Collaborative Expense</h4>
+                    </div>
+                    <div class="mb-3">
+                        <input type="number" id="sharedAmount" class="form-control text-center fs-4"
+                            placeholder="Total Bill Amount (₹)">
+                    </div>
+                    <div class="mb-4">
+                        <input type="number" id="people" class="form-control text-center fs-4"
+                            placeholder="Number of Friends">
+                    </div>
+                    <button class="btn btn-primary btn-lg w-100 mb-4 py-3" onclick="calcSplit()">
+                        Calculate Equilibrium
+                    </button>
+                    <div id="resultArea" style="display:none;">
+                        <p class="text-secondary mb-1">Each Participant Contributes:</p>
+                        <h1 class="display-4 fw-bold text-success" id="splitResult">₹0</h1>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div id="analytics" class="page stagger-in">
+        <h2 class="fw-bold mb-4">Quantum Analytics</h2>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="glass-card p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">Sector Volatility</h5>
+                        <span class="badge bg-primary bg-opacity-10 text-primary">Live Data</span>
+                    </div>
+                    <div style="height: 300px;">
+                        <canvas id="barChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="glass-card p-4 h-100">
+                    <h5 class="fw-bold mb-4">Capital Forecasting</h5>
+
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="p-3 rounded-4 bg-dark bg-opacity-25 border border-white border-opacity-10">
+                                <p class="text-dim small mb-1">DAILY BURN</p>
+                                <h3 class="fw-bold mb-0" id="burnRate">₹0</h3>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 rounded-4 bg-dark bg-opacity-25 border border-white border-opacity-10">
+                                <p class="text-dim small mb-1">EOM EXPOSURE</p>
+                                <h3 class="fw-bold mb-0 text-warning" id="prediction">₹0</h3>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 p-3 rounded-4 bg-primary bg-opacity-5 border border-primary border-opacity-10">
+                        <p class="small text-info mb-0">
+                            💡 <span class="fw-bold">Intelligence:</span> Category "<span
+                                id="topSpendingCat">---</span>"
+                            dominates your liquidity outflow. Priority 1 for optimization.
+                        </p>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-top border-white border-opacity-10">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="small fw-bold mb-0">Financial Discipline Score</h6>
+                            <span id="disciplineScoreBadge" class="badge bg-success">Superior</span>
+                        </div>
+                        <h2 class="fw-bold mb-2" id="disciplineScore">--%</h2>
+                        <button class="btn btn-premium btn-sm w-100" onclick="calculateDiscipline()">
+                            Recalculate Score
+                        </button>
+                    </div>
+
+                    <div class="mt-4 pt-4 border-top border-white border-opacity-10">
+                        <h6 class="small fw-bold mb-2">Behavioral Synthesis</h6>
+                        <p id="behavior" class="text-dim">Run analysis to see behavioral profile...</p>
+                        <button class="btn btn-outline-info btn-sm w-100" onclick="analyzeBehavior()">
+                            Process Behavioral Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- REPORTS -->
+    <div id="reports" class="page">
+        <h2 class="fw-bold mb-4">Data Hub</h2>
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="glass-card p-4">
+                    <h5>Export Governance</h5>
+                    <p class="text-secondary">Extract your financial data in industry-standard formats.</p>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-info py-3" onclick="downloadExcel()">
+                            Export to Excel (.xlsx)
+                        </button>
+                        <button class="btn btn-outline-primary py-3" onclick="exportToPDF()">
+                            Generate Audit PDF (.pdf)
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="glass-card p-4">
+                    <h5>Import Data</h5>
+                    <p class="text-secondary">Seamlessly integrate data from external systems.</p>
+                    <input type="file" id="excelUpload" class="form-control mb-3">
+                    <button class="btn btn-success w-100 py-3" onclick="importExcel()">
+                        Sync Data Package
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script>
+        // State Management
+        let data = {
+            expenses: JSON.parse(localStorage.getItem("expenses")) || [],
+            budgets: JSON.parse(localStorage.getItem("budgets")) || {},
+            users: JSON.parse(localStorage.getItem("users")) || [],
+            currentUser: JSON.parse(localStorage.getItem("currentUser")) || null
+        };
+
+        const SESSION_TIMEOUT = 3600000; // 1 hour
+        let currentOTP = null;
+        let pendingUser = null;
+        let resetFlag = false;
+
+        // Auth Logic
+        function switchAuth(mode) {
+            document.querySelectorAll('.auth-mode').forEach(m => m.classList.remove('active'));
+            document.getElementById(`${mode}Mode`).classList.add('active');
+        }
+
+        function handleLogin() {
+            const id = document.getElementById('loginId').value;
+            const pass = document.getElementById('loginPass').value;
+
+            const user = data.users.find(u => (u.email === id || u.mobile === id) && u.pass === pass);
+
+            if (user) {
+                data.currentUser = user;
+                localStorage.setItem("currentUser", JSON.stringify(user));
+                hideAuth();
+            } else {
+                alert("ACCESS DENIED: Credentials mismatch.");
+            }
+        }
+
+        function sendOTP(flow = 'signup') {
+            const email = flow === 'signup' ? document.getElementById('signupEmail').value : null;
+            const mobile = flow === 'signup' ? document.getElementById('signupMobile').value : null;
+            const pass = flow === 'signup' ? document.getElementById('signupPass').value : null;
+            const resetId = flow === 'reset' ? document.getElementById('resetId').value : null;
+
+            if (flow === 'signup' && (!email || !mobile || !pass)) {
+                alert("Incomplete data fields."); return;
+            }
+
+            if (flow === 'reset') {
+                const user = data.users.find(u => u.email === resetId || u.mobile === resetId);
+                if (!user) {
+                    alert("Identity not found in records."); return;
+                }
+                pendingUser = user;
+                resetFlag = true;
+            } else {
+                pendingUser = { email, mobile, pass };
+                resetFlag = false;
+            }
+
+            // Simulated OTP generation
+            currentOTP = Math.floor(1000 + Math.random() * 9000).toString();
+            console.log(`[SIMULATED SMS/EMAIL] Your Intelligence OTP is: ${currentOTP}`);
+            alert(`[SIMULATION]: OTP sent to your interface: ${currentOTP}`);
+
+            document.getElementById('otpTargetInfo').innerText = flow === 'reset'
+                ? `Recovery code sent to mobile endpoint ending in ${pendingUser.mobile.slice(-4)}`
+                : `Verification code sent to registration interface.`;
+
+            switchAuth('otp');
+        }
+
+        function verifyOTP() {
+            const digits = Array.from(document.querySelectorAll('.otp-digit')).map(i => i.value).join('');
+
+            if (digits === currentOTP) {
+                if (resetFlag) {
+                    const newPass = prompt("Identity Verified. Initialize New Security Key:");
+                    if (newPass) {
+                        const idx = data.users.findIndex(u => u.mobile === pendingUser.mobile);
+                        data.users[idx].pass = newPass;
+                        localStorage.setItem("users", JSON.stringify(data.users));
+                        alert("Security keys updated. Return to command center.");
+                        switchAuth('login');
+                    }
+                } else {
+                    data.users.push(pendingUser);
+                    localStorage.setItem("users", JSON.stringify(data.users));
+                    data.currentUser = pendingUser;
+                    localStorage.setItem("currentUser", JSON.stringify(pendingUser));
+                    alert("Identity Synchronized. Systems active.");
+                    hideAuth();
+                }
+            } else {
+                alert("SYNC FAILED: OTP code invalid.");
+            }
+        }
+
+        function moveFocus(el, p) {
+            if (el.value.length === 1 && p < 4) {
+                document.querySelectorAll('.otp-digit')[p].focus();
+            }
+        }
+
+        function hideAuth() {
+            document.getElementById('authOverlay').style.display = 'none';
+            document.body.classList.remove('auth-required');
+            updateSystem();
+        }
+
+        function logout() {
+            localStorage.removeItem("currentUser");
+            window.location.reload();
+        }
+
+        // State Management
+
+
+        let charts = {
+            pie: null,
+            trend: null,
+            bar: null
+        };
+
+        // Navigation & Sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+
+        function openPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.sidebar-link').forEach(b => b.classList.remove('active'));
+
+            const targetPage = document.getElementById(id);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                // Re-trigger stagger animation
+                targetPage.classList.remove('stagger-in');
+                void targetPage.offsetWidth; // Trigger reflow
+                targetPage.classList.add('stagger-in');
+            }
+
+            const activeBtn = document.querySelector(`.sidebar-link[data-page="${id}"]`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // Close sidebar on mobile
+            if (window.innerWidth < 992) {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                if (sidebar.classList.contains('active')) {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                }
+            }
+
+            updateSystem();
+        }
+
+        function switchPage(id) { openPage(id); } // Backward compatibility
+
+        function toggleAISection() {
+            const section = document.getElementById('aiAdvisorSection');
+            section.style.display = section.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle("light");
+            const icon = document.getElementById('themeIcon');
+            icon.innerText = document.body.classList.contains('light') ? '☀️' : '🌙';
+        }
+
+
+        // Initialize
+        window.onload = () => {
+            if (data.currentUser) {
+                hideAuth();
+            } else {
+                document.getElementById('authOverlay').style.display = 'flex';
+            }
+
+            document.getElementById('dateDisplay').innerText = new Date().toLocaleDateString('en-GB', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+            updateSystem();
+        };
+
+
+        // Core Logic
+        function updateSystem() {
+            saveData();
+            renderExpenseTable();
+            updateKPIs();
+            renderCharts();
+            updateBudgetStatus();
+            generateAIInsight();
+        }
+
+        function saveData() {
+            localStorage.setItem("expenses", JSON.stringify(data.expenses));
+            localStorage.setItem("budgets", JSON.stringify(data.budgets));
+            localStorage.setItem("users", JSON.stringify(data.users));
+        }
+
+        // Expense Handlers
+        function addExpense() {
+            const amountEl = document.getElementById("amount");
+            const descEl = document.getElementById("desc");
+            const categoryEl = document.getElementById("category");
+
+            if (!amountEl.value || amountEl.value <= 0) {
+                alert("Please enter a valid amount");
+                return;
+            }
+
+            const newEntry = {
+                id: Date.now(),
+                amount: parseFloat(amountEl.value),
+                desc: descEl.value || "Untitled Transaction",
+                category: categoryEl.value,
+                date: new Date().toISOString()
+            };
+
+            data.expenses.unshift(newEntry);
+            amountEl.value = "";
+            descEl.value = "";
+
+            updateSystem();
+        }
+
+        function deleteExpense(id) {
+            data.expenses = data.expenses.filter(e => e.id !== id);
+            updateSystem();
+        }
+
+        function renderExpenseTable(filter = "") {
+            const table = document.getElementById("expenseTable");
+            table.innerHTML = "";
+
+            const displayRows = data.expenses.filter(e =>
+                e.desc.toLowerCase().includes(filter.toLowerCase()) ||
+                e.category.toLowerCase().includes(filter.toLowerCase())
+            );
+
+            displayRows.forEach(e => {
+                const date = new Date(e.date).toLocaleDateString('en-GB');
+                table.innerHTML += `
+                <tr>
+                    <td class="small text-secondary">${date}</td>
+                    <td><span class="badge bg-opacity-10 text-white border border-secondary">${e.category}</span></td>
+                    <td>${e.desc}</td>
+                    <td class="text-end fw-bold">₹${e.amount.toLocaleString()}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm text-danger" onclick="deleteExpense(${e.id})">Remove</button>
+                    </td>
+                </tr>
+            `;
+            });
+        }
+
+        function searchExpense() {
+            const val = document.getElementById("searchBox").value;
+            renderExpenseTable(val);
+        }
+        async function askAI() {
+            const prompt = document.getElementById("aiPrompt").value;
+            const loading = document.getElementById("aiLoading");
+            const responseEl = document.getElementById("aiResponse");
+
+            if (!prompt) return;
+
+            const apiKey = "YOUR_OPENAI_API_KEY";
+
+            if (apiKey === "YOUR_OPENAI_API_KEY") {
+                responseEl.style.display = "block";
+                responseEl.innerHTML = `<div class='text-warning fw-bold small'>SYSTEM: API CONFIGURATION REQUIRED</div>
+                <p class='small text-dim mt-2'>Please provide a valid OpenAI API key in the source code to enable the AI Advisor. <br><br>
+                <span class='text-info'>Predictive Insight:</span> Your spending on 'Food' is 20% higher than last week. Consider shifting ₹500 to 'Education'.</p>`;
+                return;
+            }
+
+            loading.style.display = "inline";
+            responseEl.style.display = "none";
+
+            try {
+                const response = await fetch("https://api.openai.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + apiKey
+                    },
+                    body: JSON.stringify({
+                        model: "gpt-4o-mini",
+                        messages: [{ role: "user", content: prompt }]
+                    })
+                });
+
+                const aiData = await response.json();
+                responseEl.innerText = aiData.choices[0].message.content;
+                responseEl.style.display = "block";
+            } catch (err) {
+                console.error(err);
+                alert("AI Request Failed");
+            } finally {
+                loading.style.display = "none";
+            }
+        }
+        // KPI & Analytics
+        function updateKPIs() {
+            const total = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+            const uniqueDays = [...new Set(data.expenses.map(e => new Date(e.date).toLocaleDateString()))].length;
+            const divisor = uniqueDays || 1;
+
+            const totalEl = document.getElementById("totalExpense");
+            if (totalEl) totalEl.innerText = `₹${total.toLocaleString()}`;
+
+            const avgEl = document.getElementById("avgExpense");
+            if (avgEl) avgEl.innerText = `₹${Math.round(total / divisor).toLocaleString()}`;
+
+            const activeBEl = document.getElementById("activeBudgets");
+            if (activeBEl) activeBEl.innerText = Object.keys(data.budgets).length;
+
+            let score = 100;
+            const catStats = getCategoryData();
+            const budgetViolations = Object.keys(data.budgets).filter(c => (catStats[c] || 0) > data.budgets[c]);
+
+            score -= (budgetViolations.length * 15);
+            if (total > 10000) score -= 5;
+            if (total > 20000) score -= 10;
+
+            score = Math.max(0, score);
+            const scoreEl = document.getElementById("healthScore");
+            if (scoreEl) {
+                scoreEl.innerText = `${score}%`;
+                scoreEl.className = 'kpi-value ' + (score > 80 ? 'text-success' : score > 50 ? 'text-warning' : 'text-danger');
+            }
+
+            const burnEl = document.getElementById("burnRate");
+            if (burnEl) burnEl.innerText = `₹${Math.round(total / divisor).toLocaleString()}`;
+
+            const predEl = document.getElementById("prediction");
+            if (predEl) predEl.innerText = `₹${Math.round((total / divisor) * 30).toLocaleString()}`;
+
+            const topCat = Object.keys(catStats).reduce((a, b) => catStats[a] > catStats[b] ? a : b, "---");
+            const topCEl = document.getElementById("topSpendingCat");
+            if (topCEl) topCEl.innerText = topCat;
+        }
+
+
+
+        function getCategoryData() {
+            return data.expenses.reduce((acc, e) => {
+                acc[e.category] = (acc[e.category] || 0) + e.amount;
+                return acc;
+            }, {});
+        }
+
+        // Budget Logic
+        function setBudget() {
+            const cat = document.getElementById("budgetCategory").value;
+            const amt = parseFloat(document.getElementById("budgetAmount").value);
+
+            if (isNaN(amt) || amt <= 0) {
+                alert("Enter a valid budget amount");
+                return;
+            }
+
+            data.budgets[cat] = amt;
+            document.getElementById("budgetAmount").value = "";
+            updateSystem();
+            alert(`Budget set for ${cat}: ₹${amt}`);
+        }
+
+        function updateBudgetStatus() {
+            const container = document.getElementById("budgetStatusList");
+            container.innerHTML = "";
+
+            const catStats = getCategoryData();
+
+            Object.keys(data.budgets).forEach(cat => {
+                const limit = data.budgets[cat];
+                const spent = catStats[cat] || 0;
+                const percentage = Math.min(100, (spent / limit) * 100);
+                const isDanger = spent > limit;
+
+                container.innerHTML += `
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-end mb-1">
+                        <h6 class="mb-0 fw-bold">${cat}</h6>
+                        <span class="small ${isDanger ? 'text-danger fw-bold' : 'text-secondary'}">
+                            ₹${spent.toLocaleString()} / ₹${limit.toLocaleString()}
+                        </span>
+                    </div>
+                    <div class="budget-progress">
+                        <div class="progress-bar ${isDanger ? 'bg-danger' : percentage > 80 ? 'bg-warning' : 'bg-success'}"
+                             style="width: ${percentage}%"></div>
+                    </div>
+                    ${isDanger ? '<p class="small text-danger mt-1 mb-0">⚠ Exceeded by ₹' + (spent - limit).toLocaleString() + '</p>' : ''}
+                </div>
+            `;
+            });
+
+            if (Object.keys(data.budgets).length === 0) {
+                container.innerHTML = '<p class="text-secondary text-center py-5">No active budgets. Configure limits to see tracking.</p>';
+            }
+        }
+
+        // Shared Splitter
+        function calcSplit() {
+            const amt = parseFloat(document.getElementById("sharedAmount").value);
+            const ppl = parseInt(document.getElementById("people").value);
+
+            if (amt > 0 && ppl > 0) {
+                const split = (amt / ppl).toFixed(2);
+                document.getElementById("splitResult").innerText = `₹${parseFloat(split).toLocaleString()}`;
+                document.getElementById("resultArea").style.display = "block";
+            } else {
+                alert("Enter valid bill and head count");
+            }
+        }
+
+        // Charts
+        function renderCharts() {
+            destroyCharts();
+
+            const catData = getCategoryData();
+            const labels = Object.keys(catData);
+            const vals = Object.values(catData);
+
+            // Pie Chart
+            const pieCtx = document.getElementById('pieChart').getContext('2d');
+            charts.pie = new Chart(pieCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: vals,
+                        backgroundColor: ['#38bdf8', '#10b981', '#f59e0b', '#ef4444', '#818cf8', '#64748b'],
+                        borderWidth: 0,
+                        hoverOffset: 20
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', usePointStyle: true, padding: 20 } } },
+                    cutout: '70%'
+                }
+            });
+
+            // Trend Chart
+            const trendCtx = document.getElementById('trendChart').getContext('2d');
+            const timelineData = getTimelineData();
+            charts.trend = new Chart(trendCtx, {
+                type: 'line',
+                data: {
+                    labels: timelineData.labels,
+                    datasets: [{
+                        label: 'Spending Intensity',
+                        data: timelineData.values,
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#38bdf8'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, border: { display: false }, ticks: { color: '#64748b' } },
+                        x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                    },
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Bar Chart
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            charts.bar = new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Capital Outflow',
+                        data: vals,
+                        backgroundColor: 'rgba(56, 189, 248, 0.8)',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
+                        x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                    }
+                }
+            });
+        }
+
+        function destroyCharts() {
+            Object.keys(charts).forEach(k => {
+                if (charts[k]) charts[k].destroy();
+            });
+        }
+
+        function getTimelineData() {
+            const sorted = [...data.expenses].sort((a, b) => new Date(a.date) - new Date(b.date));
+            const groups = {};
+            sorted.forEach(e => {
+                const d = new Date(e.date).toLocaleDateString();
+                groups[d] = (groups[d] || 0) + e.amount;
+            });
+            return {
+                labels: Object.keys(groups),
+                values: Object.values(groups)
+            };
+        }
+
+        // AI Intelligence
+        function generateAIInsight() {
+            const insightEl = document.getElementById("aiInsight");
+            if (data.expenses.length === 0) {
+                insightEl.innerText = "Awaiting financial input to generate intelligence report...";
+                return;
+            }
+
+            const catStats = getCategoryData();
+            const topCat = Object.keys(catStats).reduce((a, b) => catStats[a] > catStats[b] ? a : b);
+            const total = data.expenses.reduce((s, e) => s + e.amount, 0);
+
+            let report = `### Strategic Analysis Summary\n\n`;
+            report += `• **Concentration Risk:** Your capital flow is heavily skewed towards **${topCat}**, accounting for ₹${catStats[topCat].toLocaleString()}.\n`;
+
+            if (catStats[topCat] / total > 0.5) {
+                report += `• **Alert:** High sector dependency detected! More than 50% of your liquidity is leaving via a single category.\n`;
+            }
+
+            const budgetViolations = Object.keys(data.budgets).filter(c => (catStats[c] || 0) > data.budgets[c]);
+            if (budgetViolations.length > 0) {
+                report += `• **Policy Violations:** Breached guardrails in: ${budgetViolations.join(", ")}.\n`;
+            } else {
+                report += `• **Status:** All defined guardrails are holding steady.\n`;
+            }
+
+            report += `\n**Optimization Protocol:** Consider diversifying your entertainment expenditure and audit your ${topCat} patterns for recurring overheads.`;
+
+            insightEl.innerHTML = report.replace(/\n/g, '<br>');
+        }
+
+        // Data Hub (Reports)
+        function downloadExcel() {
+            const ws = XLSX.utils.json_to_sheet(data.expenses);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Financial_Export");
+            XLSX.writeFile(wb, "Budget_Intelligence_Export.xlsx");
+        }
+
+        function importExcel() {
+            const file = document.getElementById("excelUpload").files[0];
+            if (!file) { alert("Please select a file first"); return; }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const dataArr = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(dataArr, { type: 'array' });
+                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+
+                // Basic validation
+                if (json.length > 0 && json[0].amount !== undefined) {
+                    // Map fields if necessary or just overwrite
+                    data.expenses = json.map(item => ({
+                        id: item.id || Date.now() + Math.random(),
+                        amount: parseFloat(item.amount),
+                        desc: item.desc || "Imported Transaction",
+                        category: item.category || "Other",
+                        date: item.date || new Date().toISOString()
+                    }));
+                    updateSystem();
+                    alert("Data Package Synchronized.");
+                } else {
+                    alert("Invalid schema detected in file.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(18);
+            doc.text("Audit Report: Budget Intelligence", 14, 22);
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
+
+            const rows = data.expenses.map(e => [
+                new Date(e.date).toLocaleDateString(),
+                e.category,
+                e.desc,
+                `Rs. ${e.amount.toLocaleString()}`
+            ]);
+
+            doc.autoTable({
+                head: [['Date', 'Category', 'Description', 'Amount']],
+                body: rows,
+                startY: 40,
+                theme: 'grid',
+                headStyles: { fillColor: [56, 189, 248] }
+            });
+
+            doc.save("Financial_Audit_Report.pdf");
+        }
+        function calculateDiscipline() {
+            let score = 100;
+            const catStats = getCategoryData();
+            data.expenses.forEach(e => {
+                if (e.amount > 2000) score -= 4;
+            });
+            Object.keys(data.budgets).forEach(cat => {
+                const spent = catStats[cat] || 0;
+                if (spent > data.budgets[cat]) score -= 20;
+            });
+            score = Math.max(0, score);
+            let status = score > 80 ? "Superior" : score > 60 ? "Tactical" : "Critical";
+            const badge = document.getElementById("disciplineScoreBadge");
+            if (badge) {
+                badge.innerText = status;
+                badge.className = `badge bg-${score > 80 ? 'success' : score > 60 ? 'warning' : 'danger'}`;
+            }
+            document.getElementById("disciplineScore").innerText = score + "%";
+        }
+
+        function predictML() {
+            const mlEl = document.getElementById("mlPrediction");
+            mlEl.innerText = "Running regression analysis...";
+            setTimeout(() => {
+                if (data.expenses.length < 5) {
+                    mlEl.innerText = "Need at least 5 transactions for viable forecasting.";
+                    return;
+                }
+                const total = data.expenses.reduce((s, e) => s + e.amount, 0);
+                const forecast = total * (1.1 + Math.random() * 0.1);
+                mlEl.innerHTML = `<span class='text-warning fw-bold'>Forecasting: ₹${Math.round(forecast).toLocaleString()}</span>`;
+            }, 1000);
+        }
+
+        function enableNotifications() {
+            if (!("Notification" in window)) {
+                alert("Notifications not supported");
+            } else if (Notification.permission === "granted") {
+                new Notification("System Online", { body: "Finance Intelligence tracking active." });
+            } else {
+                Notification.requestPermission().then(p => { if (p === "granted") enableNotifications(); });
+            }
+        }
+        function analyzeBehavior() {
+            if (data.expenses.length === 0) {
+                document.getElementById("behavior").innerText = "Insufficient data for synthesis.";
+                return;
+            }
+            const total = data.expenses.reduce((sum, e) => sum + e.amount, 0);
+            const avg = total / data.expenses.length;
+            let result = "";
+            if (avg > 1000) {
+                result = "🚀 Aggressive Spender: High frequency of high-value transactions detected.";
+            } else if (avg > 300) {
+                result = "⚖️ Balanced Spender: Moderate transaction volume and value.";
+            } else {
+                result = "🛡️ Conservative Spender: Maintaining tight control over micro-transactions.";
+            }
+            document.getElementById("behavior").innerText = result;
+        }
+
+    </script>
+
+</body>
+
+</html>
